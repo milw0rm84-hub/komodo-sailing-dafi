@@ -124,64 +124,73 @@ export default function Header() {
           </button>
         </div>
 
-        {isMenuOpen && (
-          <div className="lg:hidden pb-4">
-            <nav className="flex flex-col space-y-2">
-              {navigation.map((item) => (
-                <div key={item.name}>
-                  {item.submenu ? (
-                    <div>
-                      <button
-                        onClick={() =>
-                          setActiveSubmenu(
-                            activeSubmenu === item.name ? null : item.name
-                          )
-                        }
-                        className="flex items-center justify-between w-full py-2 text-gray-700 font-medium"
-                      >
-                        <span>{item.name}</span>
-                        <ChevronDown
-                          className={`w-4 h-4 transition-transform ${
-                            activeSubmenu === item.name ? 'rotate-180' : ''
-                          }`}
-                        />
-                      </button>
-                      {activeSubmenu === item.name && (
-                        <div className="pl-4 flex flex-col space-y-1">
-                          {item.submenu.map((subItem) => (
-                            <Link
-                              key={subItem.name}
-                              to={subItem.href}
-                              className="py-2 text-gray-600 hover:text-primary"
-                              onClick={() => setIsMenuOpen(false)}
-                            >
-                              {subItem.name}
-                            </Link>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <Link
-                      to={item.href}
-                      className="block py-2 text-gray-700 font-medium"
-                      onClick={() => setIsMenuOpen(false)}
+        <div className={`lg:hidden pb-4 ${isMenuOpen ? 'block' : 'hidden'}`}>
+          <nav className="flex flex-col space-y-2">
+            {navigation.map((item) => (
+              <div key={item.name}>
+                {item.submenu ? (
+                  <div className="border-b border-gray-100 pb-2">
+                    <button
+                      onClick={() =>
+                        setActiveSubmenu(
+                          activeSubmenu === item.name ? null : item.name
+                        )
+                      }
+                      onTouchStart={(e) => {
+                        e.preventDefault();
+                        setActiveSubmenu(
+                          activeSubmenu === item.name ? null : item.name
+                        );
+                      }}
+                      className="flex items-center justify-between w-full py-3 text-gray-700 font-medium text-base"
                     >
-                      {item.name}
-                    </Link>
-                  )}
-                </div>
-              ))}
-              <a
-                href={`https://wa.me/${settings.whatsapp}`}
-                className="flex items-center justify-center space-x-2 bg-secondary text-white px-4 py-3 rounded-lg mt-4"
-              >
-                <Phone className="w-4 h-4" />
-                <span className="font-medium">{settings.contact_phone}</span>
-              </a>
-            </nav>
-          </div>
-        )}
+                      <span>{item.name}</span>
+                      <ChevronDown
+                        className={`w-5 h-5 transition-transform duration-200 ${
+                          activeSubmenu === item.name ? 'rotate-180' : ''
+                        }`}
+                      />
+                    </button>
+                    <div className={`overflow-hidden transition-all duration-300 ${
+                      activeSubmenu === item.name ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                    }`}>
+                      <div className="pl-3 flex flex-col space-y-0">
+                        {item.submenu.map((subItem) => (
+                          <Link
+                            key={subItem.name}
+                            to={subItem.href}
+                            className="py-3 text-gray-600 hover:text-primary text-sm border-b border-gray-50 last:border-0"
+                            onClick={() => {
+                              setIsMenuOpen(false);
+                              setActiveSubmenu(null);
+                            }}
+                          >
+                            {subItem.name}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <Link
+                    to={item.href}
+                    className="block py-3 text-gray-700 font-medium text-base"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {item.name}
+                  </Link>
+                )}
+              </div>
+            ))}
+            <a
+              href={`https://wa.me/${settings.whatsapp}`}
+              className="flex items-center justify-center space-x-2 bg-secondary text-white px-4 py-3 rounded-lg mt-4"
+            >
+              <Phone className="w-4 h-4" />
+              <span className="font-medium">{settings.contact_phone}</span>
+            </a>
+          </nav>
+        </div>
       </div>
     </header>
   );

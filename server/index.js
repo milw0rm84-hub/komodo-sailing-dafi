@@ -17,11 +17,15 @@ const settingsRoutes = require('./routes/settings');
 const app = express();
 
 app.use(cors({
+<<<<<<< Updated upstream
   origin: [
     'http://localhost:5173',
     'http://localhost:3000',
     process.env.FRONTEND_URL
   ].filter(Boolean),
+=======
+  origin: true,
+>>>>>>> Stashed changes
   credentials: true
 }));
 app.use(express.json());
