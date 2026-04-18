@@ -5,3 +5,8 @@
     { "src": "package.json", "use": "@vercel/static-build@1" }
   ]
 }
+{
+  "routes": [
+    { "src": "/(.*)", "dest": "/index.html" }
+  ]
+}
