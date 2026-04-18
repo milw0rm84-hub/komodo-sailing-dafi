@@ -1,28 +1,26 @@
 const jwt = require('jsonwebtoken');
+const { sql } = require('../db');
 
-const auth = async (req, res, next) => {
+module.exports = async function auth(req, res) {
   try {
-    const authHeader = req.header('Authorization');
+    const authHeader = req.headers.authorization;
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({ message: 'Access denied. No token provided.' });
     }
 
     const token = authHeader.replace('Bearer ', '');
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'komodo-sailing-secret-key-2024');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'komodo-secret');
     
-    const [admins] = await req.db.query('SELECT id, email, name, role FROM admins WHERE id = ?', [decoded.id]);
+    const { rows } = await sql`SELECT id, email, name, role FROM admins WHERE id = ${decoded.id}`;
     
-    if (admins.length === 0) {
+    if (rows.length === 0) {
       return res.status(401).json({ message: 'Invalid token.' });
     }
 
-    req.admin = admins[0];
-    req.token = token;
-    next();
+    req.admin = rows[0];
+    return null;
   } catch (error) {
-    res.status(401).json({ message: 'Token is invalid or expired.' });
+    return res.status(401).json({ message: 'Token is invalid or expired.' });
   }
 };
-
-module.exports = auth;

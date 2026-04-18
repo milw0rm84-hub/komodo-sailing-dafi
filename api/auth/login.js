@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const { sql } = require('../db');
+const { sql } = require('@vercel/postgres');
 
 module.exports = async function handler(req, res) {
   if (req.method === 'POST') {
@@ -13,7 +13,6 @@ module.exports = async function handler(req, res) {
       if (!rows.length) {
         const hashed = await bcrypt.hash(password, 12);
         const { rows: newRows } = await sql`INSERT INTO admins (email, password, name, role) VALUES (${email}, ${hashed}, 'Admin', 'admin') RETURNING *`;
-        
         const token = jwt.sign({ id: newRows[0].id, email: newRows[0].email, role: newRows[0].role }, process.env.JWT_SECRET || 'komodo-secret', { expiresIn: '7d' });
         return res.json({ token, admin: { id: newRows[0].id, email: newRows[0].email, name: newRows[0].name, role: newRows[0].role } });
       }
@@ -24,13 +23,8 @@ module.exports = async function handler(req, res) {
 
       await sql`UPDATE admins SET last_login = NOW() WHERE id = ${admin.id}`;
       const token = jwt.sign({ id: admin.id, email: admin.email, role: admin.role }, process.env.JWT_SECRET || 'komodo-secret', { expiresIn: '7d' });
-
       return res.json({ token, admin: { id: admin.id, email: admin.email, name: admin.name, role: admin.role } });
-    } catch (e) {
-      console.error(e);
-      res.status(500).json({ message: 'Server error' });
-    }
-  } else {
-    res.status(405).end();
+    } catch (e) { console.error(e); res.status(500).json({ message: 'Server error' }); }
   }
+  res.status(405).end();
 };
