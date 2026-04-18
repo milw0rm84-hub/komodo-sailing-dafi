@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
-const { sql } = require('../db');
+const { pool } = require('../db');
 
-module.exports = async function auth(req, res) {
+module.exports = async function auth(req, res, next) {
   try {
     const authHeader = req.headers.authorization;
     
@@ -10,16 +10,16 @@ module.exports = async function auth(req, res) {
     }
 
     const token = authHeader.replace('Bearer ', '');
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'komodo-secret');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'komodo-sailing-secret-key-2024');
     
-    const { rows } = await sql`SELECT id, email, name, role FROM admins WHERE id = ${decoded.id}`;
+    const [rows] = await pool.query('SELECT id, email, name, role FROM admins WHERE id = ?', [decoded.id]);
     
     if (rows.length === 0) {
       return res.status(401).json({ message: 'Invalid token.' });
     }
 
     req.admin = rows[0];
-    return null;
+    next();
   } catch (error) {
     return res.status(401).json({ message: 'Token is invalid or expired.' });
   }

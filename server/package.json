@@ -2,17 +2,21 @@
   "name": "komodo-sailing-server",
   "version": "1.0.0",
   "description": "Backend API for Komodo Sailing Adventure",
-  "main": "api/health.js",
+  "main": "index.js",
   "scripts": {
-    "start": "node api/health.js",
-    "dev": "node api/health.js",
-    "build": "echo 'No build step required'"
+    "start": "node index.js",
+    "dev": "nodemon index.js"
   },
   "dependencies": {
-    "@vercel/postgres": "^0.10.0",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
-    "jsonwebtoken": "^9.0.2"
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "mysql2": "^3.6.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
   }
 }
