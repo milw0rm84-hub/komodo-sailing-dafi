@@ -5,11 +5,9 @@
     { "src": "package.json", "use": "@vercel/static-build", "config": { "buildCommand": "npm run build", "outputDirectory": "dist" } }
   ],
   "routes": [
-    { "src": "/api/auth/login", "dest": "/server/api/auth.js" },
+    { "src": "/api/auth/login", "dest": "/server/api/auth-login.js" },
     { "src": "/api/auth/me", "dest": "/server/api/auth-me.js" },
-    { "src": "/api/stats/public", "dest": "/server/api/stats.js" },
     { "src": "/api/stats", "dest": "/server/api/stats.js" },
-    { "src": "/api/reviews/approved", "dest": "/server/api/reviews.js" },
     { "src": "/api/(.*)", "dest": "/server/api/$1" },
     { "handle": "filesystem" },
     { "src": "/(.*)", "dest": "/dist/$1" }
