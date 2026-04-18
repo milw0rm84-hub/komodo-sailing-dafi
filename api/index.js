@@ -57,10 +57,35 @@ export default async function handler(req, res) {
     // GET /api/packages
     if (req.method === 'GET' && path === '/api/packages') {
       try {
-        const { rows } = await sql.query('SELECT * FROM packages ORDER BY created_at DESC');
-        return res.json(rows);
+        const { featured, status, search } = req.query;
+        let where = [];
+        if (featured !== undefined) where.push(featured === 'true' ? 'featured = true' : 'featured = false');
+        if (status) where.push(`status = '${status}'`);
+        if (search) where.push(`(title ILIKE '%${search}%' OR location ILIKE '%${search}%')`);
+        
+        let query = 'SELECT * FROM packages';
+        if (where.length) query += ' WHERE ' + where.join(' AND ');
+        query += ' ORDER BY created_at DESC';
+        
+        const { rows } = await sql.query(query);
+        return res.json(rows.map(p => ({ ...p, itinerary: typeof p.itinerary === 'string' ? JSON.parse(p.itinerary || '[]') : p.itinerary, gallery: typeof p.gallery === 'string' ? JSON.parse(p.gallery || '[]') : p.gallery })));
       } catch (e) {
         return res.json([]);
+      }
+    }
+
+    // GET /api/packages?id=xxx or slug
+    if (req.method === 'GET' && path === '/api/packages' && req.query.id) {
+      const { id } = req.query;
+      try {
+        const { rows } = isNaN(id) 
+          ? await sql.query('SELECT * FROM packages WHERE slug = $1', [id])
+          : await sql.query('SELECT * FROM packages WHERE id = $1', [parseInt(id)]);
+        if (!rows.length) return res.status(404).json({ message: 'Not found' });
+        const p = rows[0];
+        return res.json({ ...p, itinerary: typeof p.itinerary === 'string' ? JSON.parse(p.itinerary || '[]') : p.itinerary, gallery: typeof p.gallery === 'string' ? JSON.parse(p.gallery || '[]') : p.gallery });
+      } catch (e) {
+        return res.status(500).json({ message: 'Error' });
       }
     }
 
@@ -69,7 +94,8 @@ export default async function handler(req, res) {
       const { customerName, email, whatsapp, packageId, packageName, travelDate, numberOfGuests, notes } = req.body;
       try {
         const { rows } = await sql`INSERT INTO bookings (customer_name, email, whatsapp, package_id, package_name, travel_date, number_of_guests, notes) VALUES (${customerName}, ${email}, ${whatsapp}, ${packageId}, ${packageName}, ${travelDate}, ${numberOfGuests || 1}, ${notes || ''}) RETURNING *`;
-        return res.status(201).json({ id: rows[0].id, message: 'Booking created' });
+        const b = rows[0];
+        return res.status(201).json({ id: b.id, customerName: b.customer_name, email: b.email, whatsapp: b.whatsapp, packageId: b.package_id, packageName: b.package_name, travelDate: b.travel_date, numberOfGuests: b.number_of_guests, notes: b.notes, status: b.status, createdAt: b.created_at });
       } catch (e) {
         return res.status(500).json({ message: 'Error creating booking' });
       }
@@ -79,7 +105,7 @@ export default async function handler(req, res) {
     if (req.method === 'GET' && path === '/api/reviews') {
       try {
         const { rows } = await sql.query('SELECT * FROM reviews ORDER BY created_at DESC');
-        return res.json(rows);
+        return res.json(rows.map(r => ({ id: r.id, name: r.name, email: r.email, rating: r.rating, comment: r.comment, packageId: r.package_id, packageName: r.package_name, status: r.status, createdAt: r.created_at })));
       } catch (e) {
         return res.json([]);
       }
@@ -92,6 +118,34 @@ export default async function handler(req, res) {
         return res.json(rows);
       } catch (e) {
         return res.json([]);
+      }
+    }
+
+    // GET /api/blog
+    if (req.method === 'GET' && path === '/api/blog') {
+      try {
+        const { status } = req.query;
+        let query = 'SELECT * FROM blog_posts';
+        if (status) query += ` WHERE status = '${status}'`;
+        query += ' ORDER BY created_at DESC';
+        const { rows } = await sql.query(query);
+        return res.json(rows);
+      } catch (e) {
+        return res.json([]);
+      }
+    }
+
+    // GET /api/stats/public
+    if (req.method === 'GET' && path === '/api/stats' && req.query.public !== undefined) {
+      try {
+        const [tb, tp, tr] = await Promise.all([
+          sql.query('SELECT COUNT(*) as c FROM bookings WHERE status = $1', ['confirmed']),
+          sql.query('SELECT COUNT(*) as c FROM packages'),
+          sql.query('SELECT AVG(rating) as a FROM reviews WHERE status = $1', ['approved'])
+        ]);
+        return res.json({ guests: tb.rows[0]?.c || 500, packages: tp.rows[0]?.c || 10, rating: tr.rows[0]?.a ? parseFloat(tr.rows[0].a).toFixed(1) : 4.7 });
+      } catch (e) {
+        return res.json({ guests: 500, packages: 10, rating: 4.7 });
       }
     }
 
